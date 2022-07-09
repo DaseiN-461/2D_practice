@@ -4,39 +4,21 @@
 
 #define pixel_size 10
 
-#define x_size 8
-#define y_size 8
+#define x_size 3
+#define y_size 3
 
-#define x_grid_size 64
-#define y_grid_size 64
+#define x_grid_size 9
+#define y_grid_size 9
 
 uint32_t grid[x_grid_size][y_grid_size];
-uint32_t background[x_grid_size][y_grid_size] = {{0XFF,0XFF,0XFF,                                                    0XFF,0XFF,0XFF,
-                                                 0XFF,0XFF,0XFF},
-                                                {0XFF,0XFF,0XFF,                     0XFF,0XFF,0XFF,
-                                                 0XFF,0XFF,0XFF},
-                                                {0XFF,0XFF,0XFF,                     0XFF,0XFF,0XFF,
-                                                 0XFF,0XFF,0XFF},
-                                                {0XFF,0XFF,0XFF,                     0XFF,0XFF,0XFF,
-                                                 0XFF,0XFF,0XFF},
-                                                {0XFF,0XFF,0XFF,                     0XFF,0XFF,0XFF,
-                                                 0XFF,0XFF,0XFF},
-                                                {0XFF,0XFF,0XFF,                     0XFF,0XFF,0XFF,
-                                                 0XFF,0XFF,0XFF},
-                                                {0XFF,0XFF,0XFF,                     0XFF,0XFF,0XFF,
-                                                 0XFF,0XFF,0XFF},
-                                                {0XFF,0XFF,0XFF,                     0XFF,0XFF,0XFF,
-                                                 0XFF,0XFF,0XFF},
-                                                {0XFF,0XFF,0XFF,                     0XFF,0XFF,0XFF,
-                                                 0XFF,0XFF,0XFF}
-};
+uint32_t background[x_grid_size][y_grid_size];
 
 
 
 uint32_t mask_color[3][3] = {
-                        {0x00,0x01,0x02},
-                        {0x10,0x11,0x12},
-                        {0x20,0x21,0x22},
+                        {0xFFFF,0x0030,0xFFFF},
+                        {0x0300,0x0030,0x0030},
+                        {0xFFFF,0x0030,0xFFFF},
                     };
 
 uint8_t pos0[2] = {3,3};
@@ -71,7 +53,6 @@ typedef struct{
     bool mask_grid[x_grid_size][y_grid_size];
     uint32_t mask_color[x_size][y_size];
     uint8_t pos[2];
-    uint8_t walk_state; 
 }object2D;
 
 object2D myObject0 = {
@@ -85,20 +66,16 @@ object2D myObject1 = {
     .mask_color = {},
     .pos = {}
 };
-enum{
-    state_0,
-    state_1,
-    state_2,
-    state_3
-};
-uint8_t walk_state = state_0;
+
+
 
 void generate_grid();
-void generate_struct(object2D *ptr_object ,uint8_t pos[2], bool mask_grid[x_grid_size][y_grid_size], uint32_t mask_color[x_size][y_size]);
+void generate_object(object2D *ptr_object ,uint8_t pos[2], bool mask_grid[x_grid_size][y_grid_size], uint32_t mask_color[x_size][y_size]);
 void object2grid(object2D *ptr_object);
+object2D update_object(uint8_t x0, uint8_t y0, uint32_t new_mask_color[x_size][y_size]);
 void print_grid();
 
-void object_update(object2D *ptr_object0,object2D *ptr_object1);
+void update_grid(object2D *ptr_object0,object2D *ptr_object1);
 bool mask_union[x_grid_size][y_grid_size];
 
 
@@ -107,11 +84,12 @@ void generate_grid(){
     for(uint8_t y=0; y<x_grid_size; y++){
         for(uint8_t x=0; x<x_grid_size; x++){
             grid[x][y] = 0xFFFF;
+            background[x][y] = 0xFFFF;
         }    
     }
 }
 
-void generate_struct(object2D *ptr_object ,uint8_t pos[2], bool mask_grid[x_grid_size][y_grid_size], uint32_t mask_color[x_size][y_size]){
+void generate_object(object2D *ptr_object ,uint8_t pos[2], bool mask_grid[x_grid_size][y_grid_size], uint32_t mask_color[x_size][y_size]){
     
     ptr_object -> pos[0] = pos[0];
     ptr_object -> pos[1] = pos[1];
@@ -142,6 +120,33 @@ void object2grid(object2D *ptr_object){
     }
 }
 
+object2D update_object(uint8_t x0, uint8_t y0, uint32_t new_mask_color[x_size][y_size]){
+    object2D tempObject = {
+        .mask_grid = {},
+        .mask_color = {},
+        .pos = {}
+    };
+
+    tempObject.pos[0] = x0;
+    tempObject.pos[1] = y0;
+
+    for(uint8_t y=0; y<y_grid_size; y++){
+        for(uint8_t x=0; x<x_grid_size; x++){
+            tempObject.mask_grid[x][y] = 0;
+        }
+    }
+    
+    for(uint8_t y=0; y<y_size; y++){
+        for(uint8_t x=0; x<x_size; x++){
+            tempObject.mask_color[x][y] = new_mask_color[x][y];
+            if(tempObject.mask_color[x][y] != NULL){
+                tempObject.mask_grid[x0+x][y0+y] = 1;
+            }
+        }
+    }
+    return tempObject;
+}
+
 void print_grid(){
     uint8_t col = 0;
     printf("\r\n");
@@ -149,13 +154,13 @@ void print_grid(){
         printf("col %d    :",col);
         col++;
         for(uint8_t x=0; x<x_grid_size; x++){
-            printf(" %04X ", grid[x][y]);
+            printf(" %04X ", grid[y][x]);
         }
         printf("\r\n");
     }
 }
 
-void object_update(object2D *ptr_object0,object2D *ptr_object1){
+void update_grid(object2D *ptr_object0,object2D *ptr_object1){
     bool mask_0[x_grid_size][y_grid_size]; 
     bool mask_1[x_grid_size][y_grid_size];
     
@@ -203,18 +208,29 @@ void object_update(object2D *ptr_object0,object2D *ptr_object1){
                 if(mask_0[x][y] != mask_union[x][y]){
                     grid[x][y] = background[x][y];
                 }
-            }    
-        }
-        
-        
-        for(uint8_t y=0; y<y_grid_size; y++){
-            for(uint8_t x=0; x<x_grid_size; x++){
                 if(mask_1[x][y] != mask_union[x][y]){
-                    grid[x][y] = mask_color1[x-x0][y-y0+1];
+                    grid[x][y] = mask_color1[x-x1][y-y1];
+                }
+                if(mask_union[x][y]){
+                    if(grid[x][y] != mask_color1[x-x1][y-y1]){
+                        grid[x][y] = mask_color1[x-x1][y-y1];
+                    }
                 }
             }    
         }
         
+        
+    }else if (flag == 0){
+        for(uint8_t y=0; y<y_grid_size; y++){
+            for(uint8_t x=0; x<x_grid_size; x++){
+                if(mask_0[x][y] == 1){
+                    grid[x][y] = background[x][y];
+                }
+                if (mask_1[x][y] == 1){
+                    grid[x][y] = mask_color1[x-x1][y-y1];
+                }
+                
+            }
+        }
     }
 }
-
