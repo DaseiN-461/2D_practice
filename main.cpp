@@ -1,7 +1,7 @@
 #include <Arduino.h>
 #include <TFT_eSPI.h>
 
-#define pixel_size 5
+#define pixel_size 10
 
 #define x_size 8
 #define y_size 8
@@ -27,6 +27,7 @@ uint32_t mask[8][8] = {
                         {0x07FF,0xF81F,0xFE19,0xFE19,0xFE19,0xFE19,0xF81F,0x07FF},
                         {0x07E0,0xF81F,0xF81F,0xF81F,0x07E0,0xF81F,0xF81F,0x07E0}
                       };
+
 
 typedef struct{
     uint32_t mask[x_size][y_size];
